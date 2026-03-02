@@ -1,0 +1,23 @@
+# DIGIY QR PRO — PIN HUB (Universel)
+
+Ce repo contient la **porte d’accès PRO** de DIGIY (PIN HUB).
+Objectif : permettre à n’importe quel pro d’entrer dans son module (POS, RESTO, LOC, DRIVER, MARKET…)
+même s’il arrive **sans slug**.
+
+---
+
+## ✅ Fichiers
+- `pin.html` : Porte PIN universelle
+- (optionnel) `index.html` : page d’accueil / infos
+
+---
+
+## ✅ URL officielle (GitHub Pages)
+Après activation GitHub Pages :
+- Base : https://beauville.github.io/digiy-qr-pro/
+- Porte PIN : https://beauville.github.io/digiy-qr-pro/pin.html
+
+---
+
+## ✅ Paramètres URL
+### 1) Mode normal (slug présent)
