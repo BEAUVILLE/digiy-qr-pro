@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <meta name="theme-color" content="#061b14"/>
-  <title>DIGIY PRO — PIN ROYAL</title>
+  <title>DIGIY PRO — PIN</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -17,13 +17,15 @@
     *{box-sizing:border-box}
     body{
       margin:0; min-height:100vh; display:grid; place-items:center;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto;
-      background:radial-gradient(circle at top, rgba(250,204,21,.10), transparent 55%),
-                 linear-gradient(135deg,#04160f,#0a2b1f);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(250,204,21,.10), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(34,197,94,.10), transparent 45%),
+        linear-gradient(135deg,#04160f,#0a2b1f);
       color:var(--text); padding:18px;
     }
     .card{
-      width:min(580px,92vw);
+      width:min(620px,92vw);
       background:linear-gradient(145deg,rgba(11,42,31,.96),rgba(6,35,25,.96));
       border:1px solid var(--line);
       border-radius:22px;
@@ -50,7 +52,7 @@
     }
     .sep{height:1px;background:var(--line);margin:16px 0}
 
-    .mini{font-size:12px;color:var(--muted);line-height:1.4}
+    .mini{font-size:12px;color:var(--muted);line-height:1.45}
     .mini b{color:var(--text)}
 
     .row{display:flex;gap:10px;flex-wrap:wrap}
@@ -72,7 +74,9 @@
       background:linear-gradient(90deg,var(--ok),var(--gold));
       color:#062015; font-weight:1000; font-size:15px;
       cursor:pointer;
+      transition:transform .12s ease, filter .12s ease, opacity .12s ease;
     }
+    button:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.04)}
     button.secondary{
       background:rgba(255,255,255,.06);
       border:1px solid rgba(255,255,255,.16);
@@ -97,6 +101,7 @@
     .ok{color:var(--ok);font-weight:900}
     .bad{color:var(--bad);font-weight:900}
     .warn{color:var(--warn);font-weight:900}
+    .hidden{display:none !important}
   </style>
 </head>
 
@@ -106,23 +111,24 @@
       <div class="brand">
         <div class="ico">👑</div>
         <div>
-          <div class="t">PIN ROYAL</div>
-          <div class="sub" id="subtitle">Chargement…</div>
+          <div class="t">PIN DIGIY — MOULE</div>
+          <div class="sub" id="subtitle">Lecture des paramètres…</div>
         </div>
       </div>
-      <div class="pill" id="modulePill">—</div>
+      <div class="pill" id="modulePill">module: —</div>
     </div>
 
     <div class="sep"></div>
 
     <div class="mini">
       MODULE : <b id="moduleBox">—</b><br>
-      SLUG : <b id="slugBox">—</b>
+      SLUG : <b id="slugBox">—</b><br>
+      TÉLÉPHONE : <b id="phoneBox">—</b><br>
+      RETURN : <b id="returnBox">—</b>
     </div>
 
-    <!-- MODE SAUVETAGE -->
-    <div class="box" id="rescueBox" style="display:none;">
-      <div class="mini"><b>🔎 Retrouver mon accès</b> — si tu es arrivé sans slug.</div>
+    <div class="box" id="rescueBox">
+      <div class="mini"><b>🔎 Recherche d’accès</b> — utile si tu arrives sans slug.</div>
       <div class="row">
         <div>
           <label>Téléphone (digits)</label>
@@ -130,7 +136,7 @@
         </div>
         <div>
           <label>Module</label>
-          <input id="rescueModule" placeholder="POS / RESTO / LOC / DRIVER..." maxlength="20"/>
+          <input id="rescueModule" placeholder="Ex: LOC / DRIVER / POS / MARKET" maxlength="30"/>
         </div>
       </div>
       <button class="secondary" id="btnFindSlug">🧭 Trouver mon accès</button>
@@ -141,7 +147,8 @@
     <input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="••••"/>
 
     <button id="go">🚀 ENTRER</button>
-    <button class="danger" id="btnSupport">🛟 Support WhatsApp</button>
+    <button class="secondary" id="btnBack">⬅️ Retour</button>
+    <button class="danger hidden" id="btnSupport">🛟 Support WhatsApp</button>
 
     <div class="msg" id="msg"></div>
   </div>
@@ -150,116 +157,353 @@
 (async () => {
   "use strict";
 
-  const SUPPORT_WA = "+221771342889";
+  /*
+    MOULE VIERGE :
+    - Pas de module imposé
+    - Pas de support imposé
+    - Pas de return imposé
+    - Le fichier suit uniquement les paramètres qu'on lui donne
+  */
 
-  const SUPABASE_URL = "https://wesqmwjjtsefyjnluosj.supabase.co";
-  const SUPABASE_ANON_KEY =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indlc3Ftd2pqdHNlZnlqbmx1b3NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxNzg4ODIsImV4cCI6MjA4MDc1NDg4Mn0.dZfYOc2iL2_wRYL3zExZFsFSBK6AbMeOid2LrIjcTdA";
+  const CONFIG = {
+    SUPABASE_URL:
+      window.DIGIY_SUPABASE_URL ||
+      "https://wesqmwjjtsefyjnluosj.supabase.co",
 
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false }
-  });
+    SUPABASE_ANON_KEY:
+      window.DIGIY_SUPABASE_ANON ||
+      window.DIGIY_SUPABASE_ANON_KEY ||
+      "sb_publishable_tGHItRgeWDmGjnd0CK1DVQ_BIep4Ug3",
+
+    SUPPORT_WA:
+      window.DIGIY_SUPPORT_WA || "",
+
+    RPC_VERIFY:
+      window.DIGIY_VERIFY_RPC || "digiy_verify_access",
+
+    PUBLIC_SUBS_VIEW:
+      window.DIGIY_SUBS_VIEW || "digiy_subscriptions_public",
+
+    MODULE_ALIAS:
+      Object.assign({}, window.DIGIY_MODULE_ALIAS || {})
+  };
 
   const $ = id => document.getElementById(id);
-  const msg = html => $("msg").innerHTML = html;
-  const msgRescue = html => $("rescueMsg").innerHTML = html;
+  const setMsg = html => $("msg").innerHTML = html;
+  const setRescueMsg = html => $("rescueMsg").innerHTML = html;
 
   const url = new URL(location.href);
-  const rawModule = (url.searchParams.get("module") || "").toUpperCase();
-  const ret = (url.searchParams.get("return") || "").trim();
-  let currentSlug = (url.searchParams.get("slug") || "").toLowerCase();
 
-  const MODULE_ALIAS = { CAISSE:"POS" };
-  const TARGET_MODULE = MODULE_ALIAS[rawModule] || rawModule || "POS";
+  function cleanDigits(v){
+    return String(v || "").replace(/[^\d]/g, "").slice(0, 15);
+  }
 
-  $("moduleBox").textContent = TARGET_MODULE;
-  $("modulePill").textContent = TARGET_MODULE;
-  $("slugBox").textContent = currentSlug || "—";
+  function cleanModule(v){
+    return String(v || "").toUpperCase().replace(/[^A-Z0-9_]/g, "");
+  }
 
-  const cleanDigits = v => String(v||"").replace(/[^\d]/g,"").slice(0,15);
-  const cleanModule = v => String(v||"").toUpperCase().replace(/[^A-Z_]/g,"");
-  const cleanPin = v => String(v||"").replace(/[^\d]/g,"").slice(0,8);
+  function cleanPin(v){
+    return String(v || "").replace(/[^\d]/g, "").slice(0, 8);
+  }
 
-  function wa(text){
-    const num = SUPPORT_WA.replace(/\+/g,"");
-    location.href = "https://wa.me/" + num + "?text=" + encodeURIComponent(text);
+  function normalizeModule(v){
+    const raw = cleanModule(v);
+    return CONFIG.MODULE_ALIAS[raw] || raw;
+  }
+
+  function safeUrl(value){
+    const raw = String(value || "").trim();
+    if(!raw) return "";
+    try{
+      return new URL(raw, location.href).toString();
+    }catch(_){
+      return "";
+    }
+  }
+
+  function setBusy(on){
+    $("go").disabled = !!on;
+    $("btnFindSlug").disabled = !!on;
+    $("btnBack").disabled = !!on;
+    $("btnSupport").disabled = !!on;
+  }
+
+  function updateView(){
+    $("moduleBox").textContent = currentModule || "—";
+    $("modulePill").textContent = "module: " + (currentModule || "—");
+    $("slugBox").textContent = currentSlug || "—";
+    $("phoneBox").textContent = currentPhone || "—";
+    $("returnBox").textContent = returnUrl || "—";
+
+    $("rescuePhone").value = currentPhone || "";
+    $("rescueModule").value = currentModule || "";
+
+    if(currentSlug){
+      $("subtitle").textContent = "Slug présent — vérification PIN";
+    } else {
+      $("subtitle").textContent = "Mode recherche d’accès";
+    }
+  }
+
+  function syncUrl(){
+    const u = new URL(location.href);
+
+    if(currentModule) u.searchParams.set("module", currentModule);
+    else u.searchParams.delete("module");
+
+    if(currentSlug) u.searchParams.set("slug", currentSlug);
+    else u.searchParams.delete("slug");
+
+    if(currentPhone) u.searchParams.set("tel", currentPhone);
+    else u.searchParams.delete("tel");
+
+    if(returnUrl) u.searchParams.set("return", returnUrl);
+    else u.searchParams.delete("return");
+
+    if(publicUrl) u.searchParams.set("public", publicUrl);
+    else u.searchParams.delete("public");
+
+    history.replaceState({}, "", u.toString());
+  }
+
+  function saveAccessSession(){
+    const payload = {
+      slug: currentSlug,
+      module: currentModule,
+      phone: currentPhone,
+      access_ok: true,
+      ts: Date.now(),
+      source: "pin_moule"
+    };
+
+    try{
+      localStorage.setItem("DIGIY_ACCESS", JSON.stringify(payload));
+    }catch(_){}
+
+    try{
+      if(currentModule){
+        localStorage.setItem(`DIGIY_${currentModule}_SESSION`, JSON.stringify(payload));
+      }
+    }catch(_){}
   }
 
   function goNext(){
-    if(ret){
-      const u = new URL(ret, location.origin);
-      u.searchParams.set("slug", currentSlug);
-      u.searchParams.set("module", TARGET_MODULE);
-      u.searchParams.set("from","pin_royal");
+    if(returnUrl){
+      const u = new URL(returnUrl, location.href);
+      if(currentSlug) u.searchParams.set("slug", currentSlug);
+      if(currentModule) u.searchParams.set("module", currentModule);
+      if(currentPhone) u.searchParams.set("tel", currentPhone);
+      u.searchParams.set("from", "pin_moule");
       location.href = u.toString();
       return;
     }
-    location.href = "/";
+
+    setMsg(`<span class="ok">Accès validé.</span> Aucun return fourni.`);
   }
 
-  if(!currentSlug){
-    $("rescueBox").style.display = "block";
-    $("rescueModule").value = TARGET_MODULE;
-    $("subtitle").textContent = "Mode sauvetage actif";
-    msg(`<span class="warn">⚠️ Arrivé sans slug.</span> Mets ton téléphone.`);
-  } else {
-    $("subtitle").textContent = "Accès sécurisé — PIN requis";
+  function goBack(){
+    if(document.referrer){
+      history.back();
+      return;
+    }
+    if(publicUrl){
+      location.href = publicUrl;
+      return;
+    }
+    location.href = "./";
   }
 
-  $("btnFindSlug").addEventListener("click", async ()=>{
+  function openSupport(){
+    if(!CONFIG.SUPPORT_WA) return;
+    const num = CONFIG.SUPPORT_WA.replace(/\+/g, "");
+    const text =
+      "DIGIY PRO - Problème PIN\n" +
+      "Module: " + (currentModule || "-") + "\n" +
+      "Slug: " + (currentSlug || "-") + "\n" +
+      "Téléphone: " + (currentPhone || "-");
+    location.href = "https://wa.me/" + num + "?text=" + encodeURIComponent(text);
+  }
+
+  if(!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY){
+    setMsg(`<span class="bad">Configuration Supabase manquante.</span>`);
+    $("go").disabled = true;
+    $("btnFindSlug").disabled = true;
+    return;
+  }
+
+  const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+    auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false }
+  });
+
+  let currentModule = normalizeModule(url.searchParams.get("module") || "");
+  let currentSlug = String(url.searchParams.get("slug") || "").trim().toLowerCase();
+  let currentPhone = cleanDigits(url.searchParams.get("tel") || url.searchParams.get("phone") || "");
+  const returnUrl = safeUrl(url.searchParams.get("return") || url.searchParams.get("app") || "");
+  const publicUrl = safeUrl(url.searchParams.get("public") || "");
+
+  if(CONFIG.SUPPORT_WA){
+    $("btnSupport").classList.remove("hidden");
+  }
+
+  updateView();
+  syncUrl();
+
+  async function resolvePhoneBySlug(){
+    if(!currentSlug || currentPhone || !currentModule) return;
+
+    try{
+      const { data, error } = await sb
+        .from(CONFIG.PUBLIC_SUBS_VIEW)
+        .select("phone, slug, module")
+        .eq("slug", currentSlug)
+        .eq("module", currentModule)
+        .limit(1);
+
+      if(error){
+        console.warn("resolvePhoneBySlug error", error);
+        return;
+      }
+
+      if(data && data[0]?.phone){
+        currentPhone = cleanDigits(data[0].phone);
+        updateView();
+        syncUrl();
+      }
+    }catch(e){
+      console.warn("resolvePhoneBySlug fail", e);
+    }
+  }
+
+  await resolvePhoneBySlug();
+
+  $("btnFindSlug").addEventListener("click", async () => {
     const phone = cleanDigits($("rescuePhone").value);
-    const mod = cleanModule($("rescueModule").value || TARGET_MODULE);
+    const mod = normalizeModule($("rescueModule").value);
 
     if(phone.length < 9){
-      msgRescue(`<span class="bad">Téléphone invalide.</span>`); return;
+      setRescueMsg(`<span class="bad">Téléphone invalide.</span>`);
+      return;
+    }
+    if(!mod){
+      setRescueMsg(`<span class="bad">Module manquant.</span>`);
+      return;
     }
 
-    const { data } = await sb
-      .from("digiy_subscriptions_public")
-      .select("slug")
-      .eq("phone", phone)
-      .eq("module", mod)
-      .limit(1);
+    setBusy(true);
+    setRescueMsg(`<span class="warn">Recherche en cours…</span>`);
 
-    if(!data || !data[0]){
-      msgRescue(`<span class="bad">Aucun accès trouvé.</span>`); return;
+    try{
+      const { data, error } = await sb
+        .from(CONFIG.PUBLIC_SUBS_VIEW)
+        .select("slug, phone, module")
+        .eq("phone", phone)
+        .eq("module", mod)
+        .limit(1);
+
+      if(error){
+        console.error(error);
+        setRescueMsg(`<span class="bad">Recherche KO.</span>`);
+        return;
+      }
+
+      if(!data || !data[0]){
+        setRescueMsg(`<span class="bad">Aucun accès trouvé.</span>`);
+        return;
+      }
+
+      currentSlug = String(data[0].slug || "").trim().toLowerCase();
+      currentPhone = cleanDigits(data[0].phone || phone);
+      currentModule = normalizeModule(data[0].module || mod);
+
+      updateView();
+      syncUrl();
+
+      setRescueMsg(`<span class="ok">Accès trouvé.</span> Entre ton PIN.`);
+      setMsg(`<span class="ok">Slug retrouvé.</span> PIN requis.`);
+      $("pin").focus();
+    }catch(e){
+      console.error(e);
+      setRescueMsg(`<span class="bad">Erreur technique.</span>`);
+    }finally{
+      setBusy(false);
     }
-
-    currentSlug = data[0].slug;
-    $("slugBox").textContent = currentSlug;
-    msgRescue(`<span class="ok">Accès trouvé.</span> Entre ton PIN.`);
   });
 
   async function enter(){
     const pin = cleanPin($("pin").value);
-    if(!currentSlug){ msg(`<span class="bad">Slug manquant.</span>`); return; }
-    if(pin.length < 3){ msg(`<span class="bad">PIN invalide.</span>`); return; }
 
-    const { data } = await sb.rpc("digiy_verify_access", {
-      p_slug: currentSlug,
-      p_pin: pin,
-      p_module: TARGET_MODULE
-    });
-
-    if(!data?.ok){
-      msg(`<span class="bad">Accès refusé.</span>`); return;
+    if(!currentModule){
+      setMsg(`<span class="bad">Module manquant.</span>`);
+      return;
     }
 
-    localStorage.setItem("DIGIY_ACCESS", JSON.stringify({
-      slug: currentSlug,
-      module: TARGET_MODULE,
-      ts: Date.now()
-    }));
+    if(!currentSlug){
+      setMsg(`<span class="bad">Slug manquant.</span> Utilise la recherche d’accès.`);
+      return;
+    }
 
-    msg(`<span class="ok">Accès validé.</span>`);
-    setTimeout(goNext,300);
+    if(pin.length < 3){
+      setMsg(`<span class="bad">PIN invalide.</span>`);
+      return;
+    }
+
+    setBusy(true);
+    setMsg(`<span class="warn">Vérification…</span>`);
+
+    try{
+      const { data, error } = await sb.rpc(CONFIG.RPC_VERIFY, {
+        p_slug: currentSlug,
+        p_pin: pin,
+        p_module: currentModule
+      });
+
+      if(error){
+        console.error(error);
+        setMsg(`<span class="bad">Erreur RPC.</span>`);
+        return;
+      }
+
+      const ok =
+        data === true ||
+        data?.ok === true ||
+        data?.access_ok === true;
+
+      if(!ok){
+        setMsg(`<span class="bad">Accès refusé.</span>`);
+        return;
+      }
+
+      if(!currentPhone){
+        currentPhone = cleanDigits(data?.phone || "");
+      }
+
+      saveAccessSession();
+      updateView();
+      syncUrl();
+
+      setMsg(`<span class="ok">Accès validé.</span>`);
+      setTimeout(goNext, 220);
+    }catch(e){
+      console.error(e);
+      setMsg(`<span class="bad">Erreur technique.</span>`);
+    }finally{
+      setBusy(false);
+    }
   }
 
   $("go").addEventListener("click", enter);
-  $("pin").addEventListener("keydown", e=>{ if(e.key==="Enter") enter(); });
-  $("btnSupport").addEventListener("click", ()=>{
-    wa("DIGIY PRO - Problème PIN\nModule: "+TARGET_MODULE+"\nSlug: "+(currentSlug||"-"));
+
+  $("pin").addEventListener("input", e => {
+    e.target.value = cleanPin(e.target.value);
   });
+
+  $("pin").addEventListener("keydown", e => {
+    if(e.key === "Enter") enter();
+  });
+
+  $("btnBack").addEventListener("click", goBack);
+
+  $("btnSupport").addEventListener("click", openSupport);
 
 })();
 </script>
