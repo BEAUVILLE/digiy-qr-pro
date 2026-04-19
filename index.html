@@ -59,7 +59,7 @@
         radial-gradient(circle at 30% 0,var(--gold),transparent 60%),
         rgba(255,255,255,.05);
       color:#062015;
-      font-weight:1000;
+      font-weight:900;
       border:1px solid rgba(250,204,21,.35);
       font-size:24px;
       box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
@@ -67,7 +67,7 @@
     h1{
       margin:0;
       font-size:20px;
-      font-weight:1000;
+      font-weight:900;
       letter-spacing:.08em;
       text-transform:uppercase;
     }
@@ -108,6 +108,12 @@
       background:rgba(250,204,21,.08);
       color:#fde68a;
     }
+    .pill.bad{
+      border-color:rgba(239,68,68,.35);
+      background:rgba(239,68,68,.08);
+      color:#fecaca;
+    }
+
     .grid{
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr));
@@ -166,7 +172,7 @@
     .actionCard h3{
       margin:0 0 6px;
       font-size:14px;
-      font-weight:1000;
+      font-weight:900;
       letter-spacing:.04em;
     }
     .actionCard p{
@@ -187,10 +193,11 @@
       padding:12px 16px;
       border-radius:14px;
       text-decoration:none;
-      font-weight:1000;
+      font-weight:900;
       border:1px solid transparent;
       transition:transform .12s ease, filter .12s ease, opacity .12s ease, border-color .12s ease;
       cursor:pointer;
+      font-family:inherit;
     }
     .btn:hover:not(.disabled){
       transform:translateY(-1px);
@@ -236,7 +243,7 @@
       display:none;
       white-space:pre-wrap;
       line-height:1.45;
-      font-weight:850;
+      font-weight:800;
       font-size:14px;
     }
     .note.ok{display:block;border-color:rgba(34,197,94,.35);color:#bbf7d0;background:rgba(34,197,94,.08)}
@@ -273,6 +280,7 @@
         <div class="pill" id="pillSlug">slug: —</div>
         <div class="pill" id="pillTel">tel: —</div>
         <div class="pill warn" id="pillMode">mode: —</div>
+        <div class="pill" id="pillHold" style="display:none">hold</div>
       </div>
 
       <div class="grid">
@@ -311,19 +319,19 @@
       <div class="actions">
         <div class="actionCard">
           <h3>📲 APP PRO</h3>
-          <p>Retourne vers le cockpit / app du module quand la route est connue.</p>
+          <p>Retourne vers le cockpit / app du module quand la route est connue et autorisée.</p>
           <a id="btnApp" class="btn primary disabled" href="#" target="_blank" rel="noopener">Ouvrir l’APP</a>
         </div>
 
         <div class="actionCard">
           <h3>🌍 PUBLIC</h3>
-          <p>Ouvre la face visible client quand la route publique existe.</p>
+          <p>Ouvre la face visible client quand la route publique existe et reste dans le rail autorisé.</p>
           <a id="btnPublic" class="btn info disabled" href="#" target="_blank" rel="noopener">Ouvrir le Public</a>
         </div>
 
         <div class="actionCard">
           <h3>🔐 ACCÈS PIN</h3>
-          <p>La porte sûre : ouvre le PIN HUB avec module, slug et retour recousu.</p>
+          <p>La porte sûre : ouvre le PIN HUB avec module, slug et retour recousu, sans exposer le téléphone.</p>
           <a id="btnPin" class="btn ghost" href="./pin.html">Ouvrir la Porte PIN</a>
         </div>
       </div>
@@ -346,11 +354,15 @@
 (() => {
   "use strict";
 
+  const SESSION_KEY_TEL = "DIGIY_QR_HUB_TEL";
+  const SESSION_KEY_CTX = "DIGIY_QR_HUB_CTX";
+
   /*
     Routes par défaut.
-    - Si le QR fournit ?return=... ou ?public=..., ces valeurs passent en priorité.
-    - Les routes ci-dessous servent de secours quand elles sont connues.
+    - Si le QR fournit ?return=... ou ?public=..., ces valeurs passent en priorité,
+      mais seulement si elles restent dans les domaines autorisés.
     - CAISSE est normalisé en POS.
+    - RESTO / FRET sont gardés visibles mais marqués hold.
   */
   const ROUTES = {
     POS: {
@@ -392,13 +404,22 @@
     },
     FRET: {
       label: "DIGIY FRET",
-      icon: "🚚"
+      icon: "🚚",
+      hold: true
     },
     RESTO: {
       label: "DIGIY RESTO PRO",
-      icon: "🍽️"
+      icon: "🍽️",
+      hold: true
     }
   };
+
+  const ALLOWED_HOSTS = [
+    "digiylyfe.com",
+    "digiylyfe.net",
+    "beauville.github.io",
+    location.hostname
+  ];
 
   const $ = (id) => document.getElementById(id);
   const qs = new URLSearchParams(location.search);
@@ -414,9 +435,19 @@
     return String(v || "").trim();
   }
 
+  function digitsOnly(v){
+    return String(v || "").replace(/\D/g, "");
+  }
+
   function last4Digits(v){
-    const d = String(v || "").replace(/\D/g, "");
+    const d = digitsOnly(v);
     return d ? d.slice(-4) : "";
+  }
+
+  function maskPhone(v){
+    const d = digitsOnly(v);
+    if (!d) return "—";
+    return "***" + d.slice(-4);
   }
 
   function note(msg, type){
@@ -445,13 +476,38 @@
     });
   }
 
-  function buildUrl(base, ctx){
-    if (!base) return "";
+  function isAllowedHost(hostname){
+    const h = String(hostname || "").toLowerCase();
+    return ALLOWED_HOSTS.some(base => {
+      const b = String(base || "").toLowerCase();
+      return h === b || h.endsWith("." + b);
+    });
+  }
+
+  function sanitizeAllowedUrl(raw){
+    const value = safeText(raw);
+    if (!value) return "";
+
     try{
-      const u = new URL(base, location.href);
+      const u = new URL(value, location.href);
+
+      if (u.protocol !== "https:" && u.origin !== location.origin) return "";
+      if (u.origin !== location.origin && !isAllowedHost(u.hostname)) return "";
+
+      return u.toString();
+    }catch{
+      return "";
+    }
+  }
+
+  function buildUrl(base, ctx){
+    const safeBase = sanitizeAllowedUrl(base);
+    if (!safeBase) return "";
+
+    try{
+      const u = new URL(safeBase, location.href);
       if (ctx.module && !u.searchParams.get("module")) u.searchParams.set("module", ctx.module);
       if (ctx.slug && !u.searchParams.get("slug")) u.searchParams.set("slug", ctx.slug);
-      if (ctx.tel && !u.searchParams.get("tel")) u.searchParams.set("tel", ctx.tel);
       return u.toString();
     }catch(e){
       console.warn("buildUrl fail", base, e);
@@ -473,10 +529,25 @@
     el.removeAttribute("aria-disabled");
   }
 
+  function saveTelToSession(tel, moduleCode, slug){
+    const d = digitsOnly(tel);
+    try{
+      if (d) sessionStorage.setItem(SESSION_KEY_TEL, d);
+      else sessionStorage.removeItem(SESSION_KEY_TEL);
+
+      sessionStorage.setItem(SESSION_KEY_CTX, JSON.stringify({
+        module: moduleCode || "",
+        slug: slug || "",
+        tel_last4: last4Digits(d),
+        ts: Date.now()
+      }));
+    }catch(_){}
+  }
+
   const rawModule = safeText(qs.get("module"));
   const moduleCode = normalizeModule(rawModule || "LOC");
   const slug = safeText(qs.get("slug"));
-  const tel = safeText(qs.get("tel") || qs.get("phone"));
+  const tel = digitsOnly(qs.get("tel") || qs.get("phone"));
   const explicitApp = safeText(qs.get("return") || qs.get("app"));
   const explicitPublic = safeText(qs.get("public"));
   const go = safeText(qs.get("go")).toLowerCase();
@@ -486,7 +557,7 @@
     icon: "👑"
   };
 
-  const ctx = { module: moduleCode, slug, tel };
+  const ctx = { module: moduleCode, slug };
 
   const appUrl = buildUrl(explicitApp || meta.app || "", ctx);
   const publicUrl = buildUrl(explicitPublic || meta.public || "", ctx);
@@ -494,10 +565,11 @@
   const pinUrlObj = new URL("./pin.html", location.href);
   if (moduleCode) pinUrlObj.searchParams.set("module", moduleCode);
   if (slug) pinUrlObj.searchParams.set("slug", slug);
-  if (tel) pinUrlObj.searchParams.set("tel", tel);
   if (appUrl) pinUrlObj.searchParams.set("return", appUrl);
   if (publicUrl) pinUrlObj.searchParams.set("public", publicUrl);
   const pinUrl = pinUrlObj.toString();
+
+  saveTelToSession(tel, moduleCode, slug);
 
   document.title = (meta.label || "DIGIY QR PRO") + " — HUB";
   $("title").textContent = (meta.label || "DIGIY QR PRO") + " — HUB";
@@ -506,12 +578,18 @@
 
   $("pillModule").textContent = "module: " + (moduleCode || "—");
   $("pillSlug").textContent = "slug: " + (slug || "—");
-  $("pillTel").textContent = "tel: " + (tel || "—");
+  $("pillTel").textContent = "tel: " + maskPhone(tel);
   $("pillMode").textContent = slug ? "mode: slug" : "mode: récupération";
+
+  if (meta.hold){
+    $("pillHold").style.display = "inline-flex";
+    $("pillHold").className = "pill bad";
+    $("pillHold").textContent = "module en hold";
+  }
 
   $("infoModule").textContent = moduleCode || "—";
   $("infoSlug").textContent = slug || "—";
-  $("infoTel").textContent = tel || "—";
+  $("infoTel").textContent = maskPhone(tel);
   $("infoPin").textContent = last4Digits(tel) || "—";
   $("infoApp").textContent = appUrl || "non configuré";
   $("infoPublic").textContent = publicUrl || "non configuré";
@@ -521,9 +599,14 @@
   setLink($("btnPublic"), publicUrl, "Ouvrir le Public", "Public non configuré");
   setLink($("btnPin"), pinUrl, "Ouvrir la Porte PIN", "Ouvrir la Porte PIN");
 
-  if (!slug){
+  if (meta.hold){
     note(
-      "⚠️ Slug absent.\nLe HUB reste vivant en mode récupération : téléphone + module côté PIN.",
+      "⚠️ Ce module est actuellement en hold dans la doctrine DIGIY.\nLe HUB reste vivant, mais les portes APP/Public peuvent rester volontairement non configurées.",
+      "warn"
+    );
+  } else if (!slug){
+    note(
+      "⚠️ Slug absent.\nLe HUB reste vivant en mode récupération : module + porte PIN.",
       "warn"
     );
   } else if (!appUrl || !publicUrl){
@@ -569,23 +652,28 @@
     }
   });
 
-  if (go === "app" && appUrl) {
-    location.href = appUrl;
+  if (go === "app"){
+    if (appUrl) location.href = appUrl;
+    else note("⚠️ Redirection APP refusée : route absente ou non autorisée.", "warn");
     return;
   }
-  if (go === "public" && publicUrl) {
-    location.href = publicUrl;
+
+  if (go === "public"){
+    if (publicUrl) location.href = publicUrl;
+    else note("⚠️ Redirection Public refusée : route absente ou non autorisée.", "warn");
     return;
   }
-  if (go === "pin" && pinUrl) {
-    location.href = pinUrl;
+
+  if (go === "pin"){
+    if (pinUrl) location.href = pinUrl;
+    else note("⚠️ Redirection PIN refusée.", "warn");
     return;
   }
 
   console.log("✅ DIGIY QR PRO HUB READY", {
     module: moduleCode,
     slug,
-    tel,
+    tel_mask: maskPhone(tel),
     appUrl,
     publicUrl,
     pinUrl
