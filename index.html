@@ -2,9 +2,9 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <meta name="theme-color" content="#061b14"/>
-  <title>DIGIY QR PRO — HUB</title>
+  <title>DIGIY QR PRO — Accueil</title>
 
   <style>
     :root{
@@ -30,7 +30,7 @@
         radial-gradient(circle at bottom right, rgba(34,211,238,.08), transparent 45%),
         linear-gradient(135deg,#04160f,#0a2b1f);
       color:var(--text);
-      padding:20px;
+      padding:20px 20px calc(104px + env(safe-area-inset-bottom,0px));
     }
     .wrap{
       width:min(900px,100%);
@@ -256,6 +256,53 @@
       color:var(--muted);
       text-align:center;
     }
+
+    .bottomNav{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      z-index:99990;
+      padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));
+      background:rgba(6,27,20,.94);
+      border-top:1px solid rgba(255,255,255,.10);
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+    }
+    .bottomNavInner{
+      width:min(100%,760px);
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:6px;
+    }
+    .bottomNav a{
+      min-height:58px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      align-content:center;
+      gap:3px;
+      color:rgba(234,255,241,.70);
+      font-size:11px;
+      font-weight:950;
+      text-align:center;
+      border:1px solid transparent;
+      text-decoration:none;
+    }
+    .bottomNav .ico2{font-size:18px;line-height:1}
+    .bottomNav a.active{
+      color:#062015;
+      background:linear-gradient(135deg,var(--ok),var(--gold));
+      border-color:rgba(250,204,21,.28);
+      box-shadow:0 12px 26px rgba(34,197,94,.18);
+    }
+    @media(max-width:760px){
+      h1{font-size:17px}
+      .kv{grid-template-columns:96px 1fr}
+      .row .btn{width:100%;min-width:0}
+    }
+
   </style>
 </head>
 
@@ -266,9 +313,9 @@
       <div class="top">
         <div class="ico" id="ico">👑</div>
         <div>
-          <h1 id="title">DIGIY QR PRO — HUB</h1>
+          <h1 id="title">DIGIY QR PRO — Accueil</h1>
           <div class="sub" id="sub">
-            Porte universelle du rail DIGIY : APP PRO, Public, Accès PIN.
+            Le bon QR ouvre la bonne porte : activité, public ou accès.
           </div>
         </div>
       </div>
@@ -276,9 +323,9 @@
       <div class="sep"></div>
 
       <div class="pillRow">
-        <div class="pill good" id="pillModule">module: —</div>
-        <div class="pill" id="pillSlug">slug: —</div>
-        <div class="pill" id="pillTel">tel: —</div>
+        <div class="pill good" id="pillActivité">activité: —</div>
+        <div class="pill" id="pillRepère">repère: —</div>
+        <div class="pill" id="pillTel">tél: —</div>
         <div class="pill warn" id="pillMode">mode: —</div>
         <div class="pill" id="pillHold" style="display:none">hold</div>
       </div>
@@ -287,30 +334,30 @@
         <div class="box">
           <h2>Lecture du QR</h2>
           <div class="kv">
-            <div class="k">Module</div>
-            <div class="v mono" id="infoModule">—</div>
+            <div class="k">Activité</div>
+            <div class="v mono" id="infoActivité">—</div>
 
-            <div class="k">Slug</div>
-            <div class="v mono" id="infoSlug">—</div>
+            <div class="k">Repère</div>
+            <div class="v mono" id="infoRepère">—</div>
 
             <div class="k">Téléphone</div>
             <div class="v mono" id="infoTel">—</div>
 
-            <div class="k">PIN indicatif</div>
+            <div class="k">Code indicatif</div>
             <div class="v mono" id="infoPin">—</div>
           </div>
         </div>
 
         <div class="box">
-          <h2>Rails calculés</h2>
+          <h2>Liens préparés</h2>
           <div class="kv">
-            <div class="k">APP</div>
+            <div class="k">Activité</div>
             <div class="v mono" id="infoApp">—</div>
 
             <div class="k">Public</div>
             <div class="v mono" id="infoPublic">—</div>
 
-            <div class="k">PIN</div>
+            <div class="k">Accès</div>
             <div class="v mono" id="infoPinUrl">—</div>
           </div>
         </div>
@@ -318,37 +365,48 @@
 
       <div class="actions">
         <div class="actionCard">
-          <h3>📲 APP PRO</h3>
-          <p>Retourne vers le cockpit / app du module quand la route est connue et autorisée.</p>
-          <a id="btnApp" class="btn primary disabled" href="#" target="_blank" rel="noopener">Ouvrir l’APP</a>
+          <h3>📲 Activité PRO</h3>
+          <p>Ouvre l’espace de travail quand la route est connue et autorisée.</p>
+          <a id="btnApp" class="btn primary disabled" href="#" target="_blank" rel="noopener">Ouvrir l’Activité</a>
         </div>
 
         <div class="actionCard">
           <h3>🌍 PUBLIC</h3>
-          <p>Ouvre la face visible client quand la route publique existe et reste dans le rail autorisé.</p>
+          <p>Ouvre la page visible par le client quand elle existe.</p>
           <a id="btnPublic" class="btn info disabled" href="#" target="_blank" rel="noopener">Ouvrir le Public</a>
         </div>
 
         <div class="actionCard">
-          <h3>🔐 ACCÈS PIN</h3>
-          <p>La porte sûre : ouvre le PIN HUB avec module, slug et retour recousu, sans exposer le téléphone.</p>
-          <a id="btnPin" class="btn ghost" href="./pin.html">Ouvrir la Porte PIN</a>
+          <h3>🔐 ACCÈS Accès</h3>
+          <p>La porte sûre : ouvre le Accès HUB avec module, slug et retour recousu, sans exposer le téléphone.</p>
+          <a id="btnPin" class="btn ghost" href="./pin.html">Ouvrir la Porte Accès</a>
         </div>
       </div>
 
       <div class="row">
-        <button class="btn ghost" id="btnCopyHub" type="button">📋 Copier lien HUB</button>
-        <button class="btn ghost" id="btnCopyPin" type="button">📋 Copier lien PIN</button>
-        <button class="btn ghost" id="btnCopySlug" type="button">📋 Copier slug</button>
+        <button class="btn ghost" id="btnCopyHub" type="button">📋 Copier lien QR</button>
+        <button class="btn ghost" id="btnCopyPin" type="button">📋 Copier lien Accès</button>
+        <button class="btn ghost" id="btnCopyRepère" type="button">📋 Copier repère</button>
       </div>
 
       <div class="note warn" id="note"></div>
 
       <div class="footer">
-        DIGIYLYFE — Écosystème digital souverain · 0% commission · Paiement direct
+        DIGIYLYFE — QR terrain · lien propre · accès simple · paiement direct
       </div>
     </div>
   </div>
+
+
+  <nav class="bottomNav" aria-label="Navigation QR PRO">
+    <div class="bottomNavInner">
+      <a class="active" id="bottomHome" href="./index.html"><span class="ico2">🏠</span><span>Accueil</span></a>
+      <a id="bottomQr" href="#infoPinUrl"><span class="ico2">▦</span><span>QR</span></a>
+      <a id="bottomLinks" href="#infoApp"><span class="ico2">🔗</span><span>Liens</span></a>
+      <a id="bottomAccess" href="./pin.html"><span class="ico2">🔐</span><span>Accès</span></a>
+      <a id="bottomMore" href="#note"><span class="ico2">⚙️</span><span>Plus</span></a>
+    </div>
+  </nav>
 
 <script>
 (() => {
@@ -366,43 +424,57 @@
   */
   const ROUTES = {
     POS: {
-      label: "DIGIY CAISSE PRO",
+      label: "Mon commerce",
       icon: "🧾",
       app: "https://commerce-pro.digiylyfe.com/",
       public: "https://mon-commerce.digiylyfe.com/"
     },
     LOC: {
-      label: "DIGIY LOC PRO",
+      label: "Je loue",
       icon: "🏠",
       app: "https://pro-loc.digiylyfe.com/app.html",
       public: "https://pro-loc.digiylyfe.com/fiche.html"
     },
     DRIVER: {
-      label: "DIGIY DRIVER PRO",
-      icon: "🚗"
+      label: "Je conduis",
+      icon: "🚗",
+      app: "https://pro-driver.digiylyfe.com/dashboard-pro.html",
+      public: "https://pro-driver.digiylyfe.com/"
     },
     MARKET: {
-      label: "DIGIY MARKET",
-      icon: "🛍️"
+      label: "Je vends",
+      icon: "🛍️",
+      app: "https://pro-market.digiylyfe.com/dashboard-pro.html",
+      public: "https://pro-market.digiylyfe.com/"
     },
     JOBS: {
-      label: "DIGIY JOBS",
+      label: "Je cherche du travail",
       icon: "💼",
       app: "https://pro-job.digiylyfe.com/"
     },
     BUILD: {
-      label: "DIGIY BUILD",
+      label: "Je propose mes services",
       icon: "🏗️",
-      app: "https://pro-build.digiylyfe.com/cockpit.html"
+      app: "https://pro-build.digiylyfe.com/dashboard-pro.html",
+      public: "https://pro-build.digiylyfe.com/"
     },
     PAY: {
-      label: "DIGIY PAY",
+      label: "Mon argent",
       icon: "💳",
-      app: "https://pay.digiylyfe.com/"
+      app: "https://pro-pay.digiylyfe.com/admin.html",
+      public: "https://pay.digiylyfe.com/"
+    },
+    RESA: {
+      label: "Je réserve",
+      icon: "📅",
+      app: "https://pro-resa-resto.digiylyfe.com/dashboard-pro.html",
+      public: "https://resa-table-resto.digiylyfe.com/fiche.html"
     },
     EXPLORE: {
-      label: "DIGIY EXPLORE",
-      icon: "🗺️"
+      label: "Je fais découvrir mon lieu",
+      icon: "🗺️",
+      app: "https://pro-explore.digiylyfe.com/cockpit.html",
+      public: "https://explore.digiylyfe.com/"
     },
     FRET: {
       label: "DIGIY FRET",
@@ -426,7 +498,7 @@
   const $ = (id) => document.getElementById(id);
   const qs = new URLSearchParams(location.search);
 
-  function normalizeModule(value){
+  function normalizeActivité(value){
     const raw = String(value || "").trim().toUpperCase();
     if (!raw) return "";
     if (raw === "CAISSE") return "POS";
@@ -538,16 +610,16 @@
       else sessionStorage.removeItem(SESSION_KEY_TEL);
 
       sessionStorage.setItem(SESSION_KEY_CTX, JSON.stringify({
-        module: moduleCode || "",
-        slug: slug || "",
+        activité: moduleCode || "",
+        repère: slug || "",
         tel_last4: last4Digits(d),
         ts: Date.now()
       }));
     }catch(_){}
   }
 
-  const rawModule = safeText(qs.get("module"));
-  const moduleCode = normalizeModule(rawModule || "LOC");
+  const rawActivité = safeText(qs.get("module"));
+  const moduleCode = normalizeActivité(rawActivité || "LOC");
   const slug = safeText(qs.get("slug"));
   const tel = digitsOnly(qs.get("tel") || qs.get("phone"));
   const explicitApp = safeText(qs.get("return") || qs.get("app"));
@@ -559,7 +631,7 @@
     icon: "👑"
   };
 
-  const ctx = { module: moduleCode, slug };
+  const ctx = { activité: moduleCode, slug };
 
   const appUrl = buildUrl(explicitApp || meta.app || "", ctx);
   const publicUrl = buildUrl(explicitPublic || meta.public || "", ctx);
@@ -571,16 +643,29 @@
   if (publicUrl) pinUrlObj.searchParams.set("public", publicUrl);
   const pinUrl = pinUrlObj.toString();
 
+  function wireBottomNav(){
+    const home = new URL("./index.html", location.href);
+    if (moduleCode) home.searchParams.set("module", moduleCode);
+    if (slug) home.searchParams.set("slug", slug);
+    if (tel) home.searchParams.set("tel", tel);
+
+    $("bottomHome").href = home.toString();
+    $("bottomQr").href = "#infoPinUrl";
+    $("bottomLinks").href = "#infoApp";
+    $("bottomAccess").href = pinUrl;
+    $("bottomMore").href = "#note";
+  }
+
   saveTelToSession(tel, moduleCode, slug);
 
   document.title = (meta.label || "DIGIY QR PRO") + " — HUB";
   $("title").textContent = (meta.label || "DIGIY QR PRO") + " — HUB";
-  $("sub").textContent = "APP PRO, face publique et porte PIN recousues sur le même rail.";
+  $("sub").textContent = "Activité PRO, face publique et porte Accès recousues sur le même rail.";
   $("ico").textContent = meta.icon || "👑";
 
-  $("pillModule").textContent = "module: " + (moduleCode || "—");
-  $("pillSlug").textContent = "slug: " + (slug || "—");
-  $("pillTel").textContent = "tel: " + maskPhone(tel);
+  $("pillActivité").textContent = "activité: " + (moduleCode || "—");
+  $("pillRepère").textContent = "repère: " + (slug || "—");
+  $("pillTel").textContent = "tél: " + maskPhone(tel);
   $("pillMode").textContent = slug ? "mode: slug" : "mode: récupération";
 
   if (meta.hold){
@@ -589,36 +674,36 @@
     $("pillHold").textContent = "module en hold";
   }
 
-  $("infoModule").textContent = moduleCode || "—";
-  $("infoSlug").textContent = slug || "—";
+  $("infoActivité").textContent = moduleCode || "—";
+  $("infoRepère").textContent = slug || "—";
   $("infoTel").textContent = maskPhone(tel);
   $("infoPin").textContent = last4Digits(tel) || "—";
   $("infoApp").textContent = appUrl || "non configuré";
   $("infoPublic").textContent = publicUrl || "non configuré";
   $("infoPinUrl").textContent = pinUrl;
 
-  setLink($("btnApp"), appUrl, "Ouvrir l’APP", "APP non configurée");
+  setLink($("btnApp"), appUrl, "Ouvrir l’Activité", "Activité non configurée");
   setLink($("btnPublic"), publicUrl, "Ouvrir le Public", "Public non configuré");
-  setLink($("btnPin"), pinUrl, "Ouvrir la Porte PIN", "Ouvrir la Porte PIN");
+  setLink($("btnPin"), pinUrl, "Ouvrir la Porte Accès", "Ouvrir la Porte Accès");
 
   if (meta.hold){
     note(
-      "⚠️ Ce module est actuellement en hold dans la doctrine DIGIY.\nLe HUB reste vivant, mais les portes APP/Public peuvent rester volontairement non configurées.",
+      "⚠️ Ce module est actuellement en hold dans la doctrine DIGIY.\nLe HUB reste vivant, mais les portes Activité/Public peuvent rester volontairement non configurées.",
       "warn"
     );
   } else if (!slug){
     note(
-      "⚠️ Slug absent.\nLe HUB reste vivant en mode récupération : module + porte PIN.",
+      "⚠️ Repère absent.\nLe HUB reste vivant en mode récupération : module + porte Accès.",
       "warn"
     );
   } else if (!appUrl || !publicUrl){
     note(
-      "⚠️ Le HUB lit bien le module et le slug.\nMais certaines routes APP/Public ne sont pas encore configurées dans l’URL ou dans la table locale du fichier.",
+      "⚠️ Le HUB lit bien le module et le slug.\nMais certaines routes Activité/Public ne sont pas encore configurées dans l’URL ou dans la table locale du fichier.",
       "warn"
     );
   } else {
     note(
-      "✅ QR-PRO prêt.\nRail détecté : module + slug + portes APP/Public/PIN.",
+      "✅ QR PRO prêt.\nRail détecté : activité + repère + portes Activité/Public/Accès.",
       "ok"
     );
   }
@@ -626,37 +711,37 @@
   $("btnCopyHub").addEventListener("click", async () => {
     try{
       await copyText(location.href);
-      note("✅ Lien HUB copié.", "ok");
+      note("✅ Lien QR copié.", "ok");
     }catch(e){
       console.error(e);
-      note("❌ Copie du lien HUB impossible.", "bad");
+      note("❌ Copie du lien QR impossible.", "bad");
     }
   });
 
   $("btnCopyPin").addEventListener("click", async () => {
     try{
       await copyText(pinUrl);
-      note("✅ Lien PIN copié.", "ok");
+      note("✅ Lien Accès copié.", "ok");
     }catch(e){
       console.error(e);
-      note("❌ Copie du lien PIN impossible.", "bad");
+      note("❌ Copie du lien Accès impossible.", "bad");
     }
   });
 
-  $("btnCopySlug").addEventListener("click", async () => {
+  $("btnCopyRepère").addEventListener("click", async () => {
     try{
       if (!slug) throw new Error("missing_slug");
       await copyText(slug);
-      note("✅ Slug copié.", "ok");
+      note("✅ Repère copié.", "ok");
     }catch(e){
       console.error(e);
-      note("❌ Aucun slug à copier.", "bad");
+      note("❌ Aucun repère à copier.", "bad");
     }
   });
 
   if (go === "app"){
     if (appUrl) location.href = appUrl;
-    else note("⚠️ Redirection APP refusée : route absente ou non autorisée.", "warn");
+    else note("⚠️ Redirection Activité refusée : route absente ou non autorisée.", "warn");
     return;
   }
 
@@ -668,12 +753,12 @@
 
   if (go === "pin"){
     if (pinUrl) location.href = pinUrl;
-    else note("⚠️ Redirection PIN refusée.", "warn");
+    else note("⚠️ Redirection Accès refusée.", "warn");
     return;
   }
 
   console.log("✅ DIGIY QR PRO HUB READY", {
-    module: moduleCode,
+    activité: moduleCode,
     slug,
     tel_mask: maskPhone(tel),
     appUrl,
