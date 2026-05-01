@@ -4,7 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
   <meta name="theme-color" content="#061b14"/>
-  <title>DIGIY PRO — PIN</title>
+  <title>DIGIY QR PRO — Accès</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -22,7 +22,7 @@
         radial-gradient(circle at top, rgba(250,204,21,.10), transparent 55%),
         radial-gradient(circle at bottom right, rgba(34,197,94,.10), transparent 45%),
         linear-gradient(135deg,#04160f,#0a2b1f);
-      color:var(--text); padding:18px;
+      color:var(--text); padding:18px 18px calc(104px + env(safe-area-inset-bottom,0px));
     }
     .card{
       width:min(620px,92vw);
@@ -101,6 +101,48 @@
     .ok{color:var(--ok);font-weight:900}
     .bad{color:var(--bad);font-weight:900}
     .warn{color:var(--warn);font-weight:900}
+
+    .bottomNav{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      z-index:99990;
+      padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));
+      background:rgba(6,27,20,.94);
+      border-top:1px solid rgba(255,255,255,.10);
+      backdrop-filter:blur(16px);
+      -webkit-backdrop-filter:blur(16px);
+    }
+    .bottomNavInner{
+      width:min(100%,760px);
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:6px;
+    }
+    .bottomNav a{
+      min-height:58px;
+      border-radius:16px;
+      display:grid;
+      place-items:center;
+      align-content:center;
+      gap:3px;
+      color:rgba(234,255,241,.70);
+      font-size:11px;
+      font-weight:950;
+      text-align:center;
+      border:1px solid transparent;
+      text-decoration:none;
+    }
+    .bottomNav .ico2{font-size:18px;line-height:1}
+    .bottomNav a.active{
+      color:#062015;
+      background:linear-gradient(135deg,var(--ok),var(--gold));
+      border-color:rgba(250,204,21,.28);
+      box-shadow:0 12px 26px rgba(34,197,94,.18);
+    }
+
     .hidden{display:none !important}
   </style>
 </head>
@@ -111,39 +153,39 @@
       <div class="brand">
         <div class="ico">👑</div>
         <div>
-          <div class="t">PIN DIGIY — MOULE</div>
+          <div class="t">DIGIY QR PRO — ACCÈS</div>
           <div class="sub" id="subtitle">Lecture des paramètres…</div>
         </div>
       </div>
-      <div class="pill" id="modulePill">module: —</div>
+      <div class="pill" id="modulePill">activité: —</div>
     </div>
 
     <div class="sep"></div>
 
     <div class="mini">
-      MODULE : <b id="moduleBox">—</b><br>
-      SLUG : <b id="slugBox">—</b><br>
+      ACTIVITÉ : <b id="moduleBox">—</b><br>
+      REPÈRE : <b id="slugBox">—</b><br>
       TÉLÉPHONE : <b id="phoneBox">—</b><br>
-      RETURN : <b id="returnBox">—</b>
+      RETOUR : <b id="returnBox">—</b>
     </div>
 
     <div class="box" id="rescueBox">
-      <div class="mini"><b>🔎 Recherche d’accès</b> — utile si tu arrives sans slug.</div>
+      <div class="mini"><b>🔎 Recherche d’accès</b> — utile si tu arrives sans repère.</div>
       <div class="row">
         <div>
-          <label>Téléphone (digits)</label>
+          <label>Téléphone</label>
           <input id="rescuePhone" inputmode="numeric" placeholder="Ex: 221771234567" maxlength="15"/>
         </div>
         <div>
-          <label>Module</label>
-          <input id="rescueModule" placeholder="Ex: LOC / DRIVER / POS / MARKET" maxlength="30"/>
+          <label>Activité</label>
+          <input id="rescueActivité" placeholder="Ex: LOC / DRIVER / POS / MARKET" maxlength="30"/>
         </div>
       </div>
       <button class="secondary" id="btnFindSlug">🧭 Trouver mon accès</button>
       <div class="msg" id="rescueMsg"></div>
     </div>
 
-    <label>Entre ton PIN</label>
+    <label>Entre ton code</label>
     <input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="••••"/>
 
     <button id="go">🚀 ENTRER</button>
@@ -152,6 +194,17 @@
 
     <div class="msg" id="msg"></div>
   </div>
+
+
+  <nav class="bottomNav" aria-label="Navigation QR PRO">
+    <div class="bottomNavInner">
+      <a id="bottomHome" href="./index.html"><span class="ico2">🏠</span><span>Accueil</span></a>
+      <a id="bottomQr" href="./index.html#infoPinUrl"><span class="ico2">▦</span><span>QR</span></a>
+      <a id="bottomLinks" href="./index.html#infoApp"><span class="ico2">🔗</span><span>Liens</span></a>
+      <a class="active" id="bottomAccess" href="./pin.html"><span class="ico2">🔐</span><span>Accès</span></a>
+      <a id="bottomMore" href="./index.html#note"><span class="ico2">⚙️</span><span>Plus</span></a>
+    </div>
+  </nav>
 
 <script>
 (async () => {
@@ -182,15 +235,15 @@
     DEFAULT_RETURN_BY_MODULE:
       Object.assign({
         LOC: "./app.html",
-        DRIVER: "./cockpit.html",
-        MARKET: "./dashboard.html",
-        POS: "./dashboard.html",
-        CAISSE: "./dashboard.html",
-        BUILD: "./cockpit.html",
-        JOBS: "./cockpit.html",
-        PAY: "./cockpit.html",
-        EXPLORE: "./cockpit.html",
-        RESA: "./cockpit.html",
+        DRIVER: "https://pro-driver.digiylyfe.com/dashboard-pro.html",
+        MARKET: "https://pro-market.digiylyfe.com/dashboard-pro.html",
+        POS: "https://commerce-pro.digiylyfe.com/dashboard-pro.html",
+        CAISSE: "https://commerce-pro.digiylyfe.com/dashboard-pro.html",
+        BUILD: "https://pro-build.digiylyfe.com/dashboard-pro.html",
+        JOBS: "https://pro-job.digiylyfe.com/cockpit.html",
+        PAY: "https://pro-pay.digiylyfe.com/admin.html",
+        EXPLORE: "https://pro-explore.digiylyfe.com/cockpit.html",
+        RESA: "https://pro-resa-resto.digiylyfe.com/dashboard-pro.html",
         RESTO: "./cockpit.html",
         FRET: "./cockpit.html"
       }, window.DIGIY_DEFAULT_RETURN_BY_MODULE || {})
@@ -209,7 +262,7 @@
     return String(v || "").replace(/[^\d]/g, "").slice(0, 15);
   }
 
-  function cleanModule(v){
+  function cleanActivité(v){
     return String(v || "").toUpperCase().replace(/[^A-Z0-9_]/g, "");
   }
 
@@ -217,8 +270,8 @@
     return String(v || "").replace(/[^\d]/g, "").slice(0, 8);
   }
 
-  function normalizeModule(v){
-    const raw = cleanModule(v);
+  function normalizeActivité(v){
+    const raw = cleanActivité(v);
     return CONFIG.MODULE_ALIAS[raw] || raw;
   }
 
@@ -257,8 +310,8 @@
   }
 
   function updateView(){
-    $("moduleBox").textContent = currentModule || "—";
-    $("modulePill").textContent = "module: " + (currentModule || "—");
+    $("moduleBox").textContent = currentActivité || "—";
+    $("modulePill").textContent = "activité: " + (currentActivité || "—");
     $("slugBox").textContent = currentSlug || "—";
     $("phoneBox").textContent = maskPhone(currentPhone);
     $("returnBox").textContent = returnUrl || autoReturnHint();
@@ -268,24 +321,24 @@
       ? "Téléphone retrouvé · " + maskPhone(currentPhone)
       : "Ex: 221771234567";
 
-    $("rescueModule").value = currentModule || "";
+    $("rescueActivité").value = currentActivité || "";
 
     if(currentSlug){
-      $("subtitle").textContent = "Slug présent — vérification PIN";
+      $("subtitle").textContent = "Repère présent — vérification du code";
     } else {
       $("subtitle").textContent = "Mode recherche d’accès";
     }
   }
 
   function autoReturnHint(){
-    const candidate = CONFIG.DEFAULT_RETURN_BY_MODULE[currentModule] || "";
+    const candidate = CONFIG.DEFAULT_RETURN_BY_MODULE[currentActivité] || "";
     return candidate ? `(auto) ${candidate}` : "—";
   }
 
   function syncUrl(){
     const u = new URL(location.href);
 
-    if(currentModule) u.searchParams.set("module", currentModule);
+    if(currentActivité) u.searchParams.set("module", currentActivité);
     else u.searchParams.delete("module");
 
     if(currentSlug) u.searchParams.set("slug", currentSlug);
@@ -310,7 +363,7 @@
   function saveAccessSession(){
     const payload = {
       slug: currentSlug,
-      module: currentModule,
+      activité: currentActivité,
       phone: currentPhone,
       access_ok: true,
       ts: Date.now(),
@@ -326,8 +379,8 @@
     }catch(_){}
 
     try{
-      if(currentModule){
-        localStorage.setItem(`DIGIY_${currentModule}_SESSION`, JSON.stringify(payload));
+      if(currentActivité){
+        localStorage.setItem(`DIGIY_${currentActivité}_SESSION`, JSON.stringify(payload));
       }
     }catch(_){}
   }
@@ -335,7 +388,7 @@
   function injectCtx(baseUrl){
     const u = new URL(baseUrl, location.href);
     if(currentSlug) u.searchParams.set("slug", currentSlug);
-    if(currentModule) u.searchParams.set("module", currentModule);
+    if(currentActivité) u.searchParams.set("module", currentActivité);
     u.searchParams.set("from", "pin_moule");
     return u.toString();
   }
@@ -368,10 +421,10 @@
 
     if(returnUrl) candidates.push(returnUrl);
 
-    const mapped = CONFIG.DEFAULT_RETURN_BY_MODULE[currentModule] || "";
+    const mapped = CONFIG.DEFAULT_RETURN_BY_MODULE[currentActivité] || "";
     if(mapped) candidates.push(mapped);
 
-    if(currentModule === "LOC"){
+    if(currentActivité === "LOC"){
       candidates.push("./app.html", "./dashboard.html", "./cockpit.html", "./index.html");
     } else {
       candidates.push("./cockpit.html", "./dashboard.html", "./app.html", "./index.html");
@@ -419,9 +472,9 @@
     if(!CONFIG.SUPPORT_WA) return;
     const num = CONFIG.SUPPORT_WA.replace(/\+/g, "");
     const text =
-      "DIGIY PRO - Problème PIN\n" +
-      "Module: " + (currentModule || "-") + "\n" +
-      "Slug: " + (currentSlug || "-") + "\n" +
+      "DIGIY QR PRO - Problème code\n" +
+      "Activité: " + (currentActivité || "-") + "\n" +
+      "Repère: " + (currentSlug || "-") + "\n" +
       "Téléphone: " + maskPhone(currentPhone);
     location.href = "https://wa.me/" + num + "?text=" + encodeURIComponent(text);
   }
@@ -437,7 +490,7 @@
     auth:{ persistSession:false, autoRefreshToken:false, detectSessionInUrl:false }
   });
 
-  let currentModule = normalizeModule(url.searchParams.get("module") || "");
+  let currentActivité = normalizeActivité(url.searchParams.get("module") || "");
   let currentSlug = String(url.searchParams.get("slug") || "").trim().toLowerCase();
   let currentPhone = cleanDigits(url.searchParams.get("tel") || url.searchParams.get("phone") || "");
   const returnUrl = safeUrl(url.searchParams.get("return") || url.searchParams.get("app") || "");
@@ -457,14 +510,14 @@
   syncUrl();
 
   async function resolvePhoneBySlug(){
-    if(!currentSlug || currentPhone || !currentModule) return;
+    if(!currentSlug || currentPhone || !currentActivité) return;
 
     try{
       const { data, error } = await sb
         .from(CONFIG.PUBLIC_SUBS_VIEW)
         .select("phone, slug, module")
         .eq("slug", currentSlug)
-        .eq("module", currentModule)
+        .eq("module", currentActivité)
         .limit(1);
 
       if(error){
@@ -489,14 +542,14 @@
 
   $("btnFindSlug").addEventListener("click", async () => {
     const phone = cleanDigits($("rescuePhone").value || currentPhone);
-    const mod = normalizeModule($("rescueModule").value);
+    const mod = normalizeActivité($("rescueActivité").value);
 
     if(phone.length < 9){
       setRescueMsg(`<span class="bad">Téléphone invalide.</span>`);
       return;
     }
     if(!mod){
-      setRescueMsg(`<span class="bad">Module manquant.</span>`);
+      setRescueMsg(`<span class="bad">Activité manquant.</span>`);
       return;
     }
 
@@ -524,7 +577,7 @@
 
       currentSlug = String(data[0].slug || "").trim().toLowerCase();
       currentPhone = cleanDigits(data[0].phone || phone);
-      currentModule = normalizeModule(data[0].module || mod);
+      currentActivité = normalizeActivité(data[0].module || mod);
 
       try{
         sessionStorage.setItem(SESSION_KEY_TEL, currentPhone);
@@ -533,8 +586,8 @@
       updateView();
       syncUrl();
 
-      setRescueMsg(`<span class="ok">Accès trouvé.</span> Entre ton PIN.`);
-      setMsg(`<span class="ok">Slug retrouvé.</span> PIN requis.`);
+      setRescueMsg(`<span class="ok">Accès trouvé.</span> Entre ton code.`);
+      setMsg(`<span class="ok">Repère retrouvé.</span> Code requis.`);
       $("pin").focus();
     }catch(e){
       console.error(e);
@@ -547,18 +600,18 @@
   async function enter(){
     const pin = cleanPin($("pin").value);
 
-    if(!currentModule){
-      setMsg(`<span class="bad">Module manquant.</span>`);
+    if(!currentActivité){
+      setMsg(`<span class="bad">Activité manquant.</span>`);
       return;
     }
 
     if(!currentSlug){
-      setMsg(`<span class="bad">Slug manquant.</span> Utilise la recherche d’accès.`);
+      setMsg(`<span class="bad">Repère manquant.</span> Utilise la recherche d’accès.`);
       return;
     }
 
     if(pin.length < 3){
-      setMsg(`<span class="bad">PIN invalide.</span>`);
+      setMsg(`<span class="bad">Code invalide.</span>`);
       return;
     }
 
@@ -569,7 +622,7 @@
       const { data, error } = await sb.rpc(CONFIG.RPC_VERIFY, {
         p_slug: currentSlug,
         p_pin: pin,
-        p_module: currentModule
+        p_activité: currentActivité
       });
 
       if(error){
